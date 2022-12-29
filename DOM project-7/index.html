@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Task Manager</title>
+    <style>
+       
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+    <script src="https:cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.4/jspdf.debug.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.4/jspdf.min.js"></script>
+    <link rel="stylesheet" href="project-7.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="heading">Daily Task Manager</h2>
+        <form id="taskSubmit">
+            <input type="text" name="task-name" placeholder="Enter task name" required />
+            <input type="number" name="time" placeholder="Input Time" max="12" min="1" required />
+            <select name="period" placeholder="Select" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+            <input type="submit" value="Add Task" />
+        </form>
+        <div class="list-content">
+            <h2 class="title">List of all existing tasks</h2>
+            <div class="all-task">
+                <table>
+                    <tr>
+                        <th>Task Name</th>
+                        <th>Approximate Time</th>
+                        <th>Completed ?</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="congratulations">
+            <h2 class="highlight">congratulations</h2>
+          <div class="text-content">
+            <h2>Your Today's Report'</h2>
+            <div class="activity-status">Your Activity Status is : Good</div>
+          </div>
+          <button id="hide">Ok</button>
+        </div>
+        <div class="buttons">
+            <button id="reset">Clear All</button>
+            <a href="javascript:generatePDF()" id="print">Print</a>
+        </div>
+        <div class="output">
+            <div class="list-content">
+                <h2 class="title">List of all completed</h2>
+                <div class="completed-task">
+                </div>
+            </div>
+            <div class="list-content">
+                <h2 class="title">List of incomplete task</h2>
+                <div class="incompleted-task">
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        
+// Selecting DOM elements   
+const taskForm = document.getElementById('taskSubmit');
+const taskName = taskForm["task-name"]
+const taskTime = taskForm["time"]
+const taskPeriod = taskForm["period"]
+const table = document.querySelector('table');
+const resetBtn = document.querySelector('#reset')
+const completedTask = document.querySelector('.completed-task');
+const incompletedTask = document.querySelector('.incompleted-task')
+
+// Creating element for storing data
+let tasks = JSON.parse(localStorage.getItem('tasks')) || []
+let length=Number(JSON.parse(localStorage.getItem('length')))||0
+const addTask = (name, time, period) => {
+    tasks.push({ name, time, period })
+    console.log('I am ok')
+    localStorage.setItem('tasks', JSON.stringify(tasks))
+    return { name, time, period }
+
+}
+
+// Task data retriving element
+const createTask = ({ name, time, period }) => {
+    let tr = document.createElement('tr')
+    tr.classList.add('task')
+    let td1 = document.createElement('td');
+    td1.classList.add('taskName')
+    let td2 = document.createElement('td');
+    let td3 = document.createElement('td');
+    td1.innerText = name;
+    td2.innerText = time + "  " + period;
+    td3.innerHTML = `<img src="./images/check-solid.svg" class="ok"/><img src="./images/xmark-solid.svg" class="incompleted"/>`
+
+    tr.appendChild(td1)
+    tr.appendChild(td2)
+    tr.appendChild(td3)
+    table.appendChild(tr)
+
+
+}
+tasks.forEach(createTask)
+
+
+// Creating data
+taskForm.onsubmit = (e) => {
+    e.preventDefault()
+    const newTask = addTask(
+        taskName.value,
+        taskTime.value,
+        taskPeriod.value
+    )
+    createTask(newTask);
+    taskName.value = ""
+    taskTime.value = ""
+    length++
+    localStorage.setItem('length',length)
+    location.reload()
+}
+
+
+
+// finding primary length of all task array
+let lengthCountTask=[]
+lengthCountTask.push(tasks)
+
+// declaring completed task array
+
+const doneTask = JSON.parse(localStorage.getItem('comTask')) || []
+const appendCompleted = (TaskName) => {
+    localStorage.setItem('comTask', JSON.stringify(doneTask))
+    return taskName
+}
+
+// making Completed taskList and save it to localeStorage 
+perce = (doneTask.length /tasks.length);
+const makeCompleted = (taskName) => {
+    let li = document.createElement('li');
+    li.classList.add('completed');
+    li.innerText = taskName
+    completedTask.appendChild(li)
+}
+doneTask.forEach(makeCompleted)
+
+let doneBtn = document.querySelectorAll('.ok')
+doneBtn.forEach(btn => btn.onclick = (e) => {
+    let target = e.target
+    let targetTask = target.parentElement.parentElement.querySelector('.taskName').innerText;
+    doneTask.push(targetTask)
+    makeCompleted(targetTask)
+    appendCompleted(targetTask)
+    var newTaskList = tasks.filter(task => task.name !== targetTask)
+    tasks = newTaskList
+    console.log(tasks)
+    localStorage.setItem('tasks', JSON.stringify(tasks))
+    target.parentNode.parentNode.remove()
+    length--
+    localStorage.setItem('length',JSON.stringify(length))
+    location.reload()
+})
+
+// creating incompleted task List
+const incomTask = JSON.parse(localStorage.getItem('incomTask')) || []
+const appendIncomTask = () => {
+    localStorage.setItem('incomTask', JSON.stringify(incomTask))
+}
+const makeInCompleted = (taskName) => {
+    let li = document.createElement('li');
+    li.classList.add('incompletedTask');
+    li.innerText = taskName
+    incompletedTask.appendChild(li)
+}
+incomTask.forEach(makeInCompleted)
+
+
+let incomBtn = document.querySelectorAll('.incompleted')
+incomBtn.forEach(btn => btn.onclick = (e) => {
+    let target = e.target
+    let targetTask = target.parentElement.parentElement.querySelector('.taskName').innerText;
+    incomTask.push(targetTask)
+    makeInCompleted(targetTask)
+    appendIncomTask(targetTask)
+    const newTaskList = tasks.filter(task => task.name !== targetTask)
+    tasks = newTaskList
+    localStorage.setItem('tasks', JSON.stringify(tasks))
+    target.parentNode.parentNode.remove()
+    length--
+    localStorage.setItem('length',JSON.stringify(length))
+    location.reload()
+})
+
+let hideBtn = document.querySelector('#hide');
+hideBtn.onclick = () => {
+    let congoDiv = document.querySelector('.congratulations')
+    congoDiv.style.display = 'none'
+}
+// Calculating good task percentages
+if (length===0 && doneTask.length!==0 || incomTask.length !==0) {
+    let congoDiv = document.querySelector('.congratulations')
+    congoDiv.style.display='block'
+    let activityStatus = document.querySelector('.activity-status')
+    message = "You are doing good .Keep Going"
+    activityStatus.innerText = message
+}
+
+
+resetBtn.onclick = () => {
+    localStorage.clear('length')
+    localStorage.clear('tasks');
+    document.querySelectorAll('.task').forEach(item => {
+        item.remove()
+    })
+    localStorage.clear('taskName');
+    document.querySelectorAll('.completed').forEach(item => {
+        item.remove()
+    })
+    document.querySelectorAll('.incompletedTask').forEach(item => {
+        item.remove()
+    })
+
+}
+
+// creating DOM element
+
+
+const printBtn = document.querySelector('#print')
+printBtn = document.querySelector('#print')
+printBtn.addEventListener('click', function () {
+    document.write(document.querySelector('.output'))
+})
+printBtn.addEventListener('click', function (event) {
+    event.preventDefault()
+    var printElement = document.querySelector('.completedTask');
+    html2pdf().from(printElement).save();
+    var opt = {
+        margin: 1,
+        filename: 'pageContent' + js.AutoCode() + 'pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    }
+})
+
+
+async function generatePDF() {
+    document.querySelector('#print').innerHTML = "currently downloading ,please wait";
+    var completeTask = document.querySelector('.completed-task');
+    var incompleteTask = document.querySelector('.trash-task');
+
+
+
+    // downloading
+    var printDoc = document.querySelector('.output');
+    printDoc.style.width = '57%';
+    var doc = new jsPDF('p', 'px');
+
+    await html2canvas(printDoc, {
+        allowTaint: true,
+        useCORS: true,
+        width: 1024,
+        scale: 1,
+
+
+    }).then((canvas) => {
+
+
+
+        doc.addImage(canvas.toDataURL("././image/png"), 'PNG', 9, 16)
+    })
+    doc.save("Document.pdf")
+    document.querySelector('#print').innerHTML = "Click to download again";
+    completeTask.style.height = '300px';
+    incompleteTask.style.height = '300px';
+}    
+
+    </script>
+</body>
+
+</html>
